@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
 
 app = typer.Typer(
     name="ai-video-editor",
@@ -19,7 +16,6 @@ app = typer.Typer(
     add_completion=False,
 )
 
-console = Console(stderr=True)  # progress/info to stderr, JSON to stdout
 err_console = Console(stderr=True)
 
 
@@ -30,24 +26,24 @@ err_console = Console(stderr=True)
 @app.command()
 def process(
     video: Path = typer.Argument(..., help="Path to the input video file."),
-    config: Optional[Path] = typer.Option(
+    config: Path | None = typer.Option(
         None,
         "--config",
         "-c",
         help="Path to a custom YAML config file (merged over defaults).",
     ),
-    whisper_model: Optional[str] = typer.Option(
+    whisper_model: str | None = typer.Option(
         None,
         "--whisper-model",
         "-m",
         help="Override Whisper model size (tiny/base/small/medium/large/large-v3).",
     ),
-    lut: Optional[Path] = typer.Option(
+    lut: Path | None = typer.Option(
         None,
         "--lut",
         help="Path to a .cube LUT file for color grading.",
     ),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None,
         "--output",
         "-o",

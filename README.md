@@ -99,7 +99,7 @@ The default config lives in `config.default.yml`. Override any section with `--c
 | `restarts` | `enabled`, `trigger_phrases`, `detect_repeated_starts` |
 | `fillers` | `enabled`, `min_filler_duration_sec`, `words.en`, `words.ru` |
 | `audio` | `enabled` (off by default), noise reduction and loudness settings |
-| `video` | `lut_path`, `zoom_punch.enabled`, `position_smoothing.enabled` |
+| `video` | `lut_path`, `position_smoothing.enabled` |
 | `hook` | `enabled`, `duration_sec`, `model` |
 | `chapters` | `enabled`, `model` |
 | `encoding` | `codec`, `quality`, `audio_codec`, `audio_bitrate` |
@@ -123,7 +123,7 @@ ai-video-editor process video.mp4 --config my-config.yml
 The pipeline runs four sequential phases:
 
 1. **Analysis** — Extract audio → Silero VAD (speech segments) → Whisper transcription → edit decisions (merge short gaps, remove restarts and fillers, apply padding)
-2. **Assembly** — Frame-accurate FFmpeg segment extraction → concat → optional zoom punch-in → optional audio enhancement → optional LUT color grade
+2. **Assembly** — Frame-accurate FFmpeg segment extraction → concat → optional audio enhancement → optional LUT color grade
 3. **AI Enhancement** — Smart hook selection and YouTube chapters via OpenRouter (skipped if `--no-hook --no-chapters` or no API key)
 4. **Encode** — Final h264_videotoolbox (or libx264) encode with AAC audio, optimized for web playback
 
