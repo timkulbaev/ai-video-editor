@@ -6,7 +6,7 @@ A local, open-source CLI tool that automatically edits talking-head videos using
 
 - **Silence removal** — Silero VAD strips dead air; short natural pauses are preserved
 - **Filler word removal** — English and Russian filler words ("um", "uh", "ну", "типа", "эээ", ...)
-- **Restart phrase detection** — "cut cut" / "кат кат" removes the entire failed take automatically
+- **Restart detection** — "cut cut" / "кат кат" removes the entire failed take; short isolated bursts (coughs, false starts) are auto-removed via VAD duration filtering
 - **Repeated sentence detection** — auto-detects and cuts duplicate sentence starts
 - **Smart hook generation** — OpenRouter LLM picks the best 8-second opener (optional)
 - **YouTube chapter markers** — LLM generates timestamped chapters from the transcript (optional)
@@ -96,10 +96,10 @@ The default config lives in `config.default.yml`. Override any section with `--c
 |---------|-------------|
 | `whisper` | `model`, `language`, `device` |
 | `silence` | `min_gap_sec` (merge threshold), `padding_sec` (breathing room at cuts) |
-| `restarts` | `enabled`, `trigger_phrases`, `detect_repeated_starts` |
+| `restarts` | `enabled`, `trigger_phrases`, `detect_repeated_starts`, `max_burst_duration_sec` |
 | `fillers` | `enabled`, `min_filler_duration_sec`, `words.en`, `words.ru` |
 | `audio` | `enabled` (off by default), noise reduction and loudness settings |
-| `video` | `lut_path`, `position_smoothing.enabled` |
+| `video` | `lut_path` |
 | `hook` | `enabled`, `duration_sec`, `model` |
 | `chapters` | `enabled`, `model` |
 | `encoding` | `codec`, `quality`, `audio_codec`, `audio_bitrate` |
@@ -122,7 +122,7 @@ ai-video-editor process video.mp4 --config my-config.yml
 
 The pipeline runs four sequential phases:
 
-1. **Analysis** — Extract audio → Silero VAD (speech segments) → Whisper transcription → edit decisions (merge short gaps, remove restarts and fillers, apply padding)
+1. **Analysis** — Extract audio → Silero VAD (speech segments) → Whisper transcription → edit decisions (remove short bursts, merge short gaps, remove restarts and fillers, apply padding)
 2. **Assembly** — Frame-accurate FFmpeg segment extraction → concat → optional audio enhancement → optional LUT color grade
 3. **AI Enhancement** — Smart hook selection and YouTube chapters via OpenRouter (skipped if `--no-hook --no-chapters` or no API key)
 4. **Encode** — Final h264_videotoolbox (or libx264) encode with AAC audio, optimized for web playback

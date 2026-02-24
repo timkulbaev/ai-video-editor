@@ -39,8 +39,6 @@ audio:
 
 video:
   lut_path: null          # path to .cube LUT file, null = skip
-  position_smoothing:
-    enabled: true
 
 hook:
   enabled: true
