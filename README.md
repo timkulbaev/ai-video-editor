@@ -1,6 +1,6 @@
 # AI Video Editor
 
-AI-powered CLI tool for automatic talking-head video editing.
+A local, open-source CLI tool that automatically edits talking-head videos using AI. Point it at a raw recording and it removes silences, filler words ("um", "uh", "ну", "типа"), and failed takes (say "cut cut" to mark a restart). It uses Silero VAD for speech detection, Whisper large-v3 for transcription with word-level timestamps, and FFmpeg for frame-accurate assembly. Optionally generates a smart hook opener and YouTube chapter markers via LLM. Runs entirely on your machine — no cloud APIs required for the core pipeline. Designed to be invoked by AI agents (structured JSON output) or used as an MCP server in Claude Desktop.
 
 ## Features
 
