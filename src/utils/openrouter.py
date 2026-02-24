@@ -10,7 +10,7 @@ import httpx
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_TIMEOUT = 60.0  # seconds
 # Shown in OpenRouter usage dashboard. Override via OPENROUTER_REFERER env var.
-_DEFAULT_REFERER = "https://github.com/your-username/ai-video-editor"
+_DEFAULT_REFERER = "https://github.com/timkulbaev/ai-video-editor"
 
 
 class OpenRouterError(RuntimeError):
