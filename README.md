@@ -32,7 +32,11 @@ uv pip install -e .
 ## Quick Start
 
 ```bash
+# Core editing only (no API calls)
 ai-video-editor process video.mp4 --no-hook --no-chapters
+
+# Full pipeline with smart hook opener + YouTube chapters (requires OPENROUTER_API_KEY)
+ai-video-editor process video.mp4
 ```
 
 Example output (stdout):
@@ -123,11 +127,33 @@ The pipeline runs four sequential phases:
 3. **AI Enhancement** — Smart hook selection and YouTube chapters via OpenRouter (skipped if `--no-hook --no-chapters` or no API key)
 4. **Encode** — Final h264_videotoolbox (or libx264) encode with AAC audio, optimized for web playback
 
+## Claude Desktop (MCP Server)
+
+The tool includes a built-in MCP server so Claude Desktop can use it as a native capability.
+
+**Setup:**
+
+1. Add to your `claude_desktop_config.json` (see `claude_desktop_config.example.json` for the template):
+
+```json
+"ai-video-editor": {
+  "command": "/path/to/ai-video-editor/.venv/bin/python",
+  "args": ["-m", "src.mcp_server"],
+  "cwd": "/path/to/ai-video-editor"
+}
+```
+
+2. Restart Claude Desktop.
+3. Optionally install `SKILL.md` as a capability for model selection guidance and workflow tips.
+
+Claude gets three tools: `process_video`, `video_info`, and `list_models`.
+
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `OPENROUTER_API_KEY` | Required for hook generation and chapter markers. Set in a `.env` file next to `pyproject.toml` or export in your shell. Without it, AI enhancement steps are skipped gracefully. |
+| `OPENROUTER_API_KEY` | Required for smart hook and chapter generation. Set in a `.env` file next to `pyproject.toml` or export in your shell. Without it, AI enhancement steps are skipped gracefully. Get a key at [openrouter.ai/keys](https://openrouter.ai/keys). |
+| `OPENROUTER_REFERER` | Optional. Shown in your OpenRouter usage dashboard for attribution tracking. |
 
 ## License
 
