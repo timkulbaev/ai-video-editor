@@ -1,4 +1,9 @@
-# Skill: AI Video Editor
+---
+name: AI Video Editor
+description: Automatically edit talking-head videos — remove silences, filler words, and failed takes using AI
+---
+
+# AI Video Editor
 
 ## When to Use
 
@@ -40,7 +45,12 @@ process_video(
 )
 ```
 
-Set `no_hook=False` and `no_chapters=False` only if `OPENROUTER_API_KEY` is set and the user wants AI-generated hook or chapter markers.
+**Hook and chapters** — ask the user if they want these:
+
+- `no_hook=False` — AI picks the most engaging ~8-second clip and moves it to the start as an opener (great for YouTube/social media)
+- `no_chapters=False` — AI generates timestamped YouTube chapter markers from the transcript
+
+Both require `OPENROUTER_API_KEY` in the `.env` file. If the key is missing, these steps skip silently. If the user wants to publish on YouTube or social media, suggest enabling both.
 
 ### 4. Report results to the user
 
