@@ -14,20 +14,26 @@ Requires FFmpeg (`brew install ffmpeg` on macOS) and PyTorch (`pip install torch
 
 ```
 src/
+  cli.py               # Typer CLI entry point — process, info, models commands
   pipeline.py          # Step orchestrator — reads context, calls steps in order
+  config.py            # YAML config loader with deep merge and validation
   mcp_server.py        # MCP server (FastMCP) — exposes CLI tools to Claude Desktop
   steps/
+    extract_audio.py   # FFmpeg audio extraction — produces 16kHz mono WAV
     detect_speech.py   # Silero VAD — produces speech_segments
     transcribe.py      # faster-whisper — produces transcript with word timestamps
     edit_decisions.py  # Merge, filter, pad segments — produces keep_segments
     assemble.py        # FFmpeg extract + concat — produces assembled_video
+    jump_cuts.py       # Alternating zoom punch-in with face-centered crop
     enhance_audio.py   # Optional audio polish chain
-    encode.py          # Final VideoToolbox/libx264 encode
-    hook.py            # Optional AI hook via OpenRouter
+    color_grade.py     # Optional .cube LUT color grading
+    smart_hook.py      # Optional AI hook via OpenRouter
     chapters.py        # Optional YouTube chapters via OpenRouter
+    encode.py          # Final VideoToolbox/libx264 encode
   utils/
     ffmpeg.py          # FFmpeg wrappers (run, probe, bin detection)
-    config.py          # YAML config loader with deep merge
+    openrouter.py      # OpenRouter API client (chat completion)
+    face_detect.py     # MediaPipe face detection for position smoothing
     json_output.py     # emit_progress / emit_error helpers
 config.default.yml     # Baseline config (all features documented)
 ```

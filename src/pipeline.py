@@ -193,14 +193,17 @@ def _prepend_hook(context: dict[str, Any], config: dict[str, Any]) -> None:
 
     # Extract hook clip
     hook_clip = str(Path(work_dir) / "hook_clip.mp4")
+    hook_duration = hook_end - hook_start
     cmd_extract = [
         ffmpeg_bin(),
         "-y",
         "-ss", str(hook_start),
-        "-to", str(hook_end),
         "-i", context["input_video"],
-        "-c", "copy",
-        "-avoid_negative_ts", "make_zero",
+        "-t", str(hook_duration),
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "18",
+        "-c:a", "aac",
         hook_clip,
     ]
     try:
@@ -211,7 +214,6 @@ def _prepend_hook(context: dict[str, Any], config: dict[str, Any]) -> None:
 
     # Prepend hook with xfade crossfade into assembled video
     output_with_hook = str(Path(work_dir) / "assembled_with_hook.mp4")
-    hook_duration = hook_end - hook_start
     xfade_offset = max(0.1, hook_duration - crossfade_sec)
 
     filter_str = (

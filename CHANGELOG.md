@@ -2,6 +2,16 @@
 
 All notable changes to ai-video-editor are documented here.
 
+## v0.1.1 — 2026-02-24
+
+### Fixed
+- Smart hook crossfade now works reliably — hook clip extraction uses libx264 re-encode instead of stream copy, eliminating FFmpeg xfade timebase mismatch that caused hook prepend to silently fail on Apple QuickTime source videos.
+
+### Changed
+- Hook clip extraction uses input-side seek for better performance on long videos.
+- CONTRIBUTING.md project structure updated with all 15 source files and corrected paths.
+- pyproject.toml version aligned with CHANGELOG (was incorrectly set to 1.0.0).
+
 ## v0.1.0 — 2026-02-24
 
 ### Added
