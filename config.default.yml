@@ -1,0 +1,61 @@
+whisper:
+  model: large-v3
+  language: auto          # auto-detect, or "en", "ru"
+  device: cpu             # cpu for CTranslate2 on Apple Silicon
+
+silence:
+  min_silence_ms: 500     # minimum silence duration to remove
+  padding_ms: 100         # keep this much audio before/after speech
+  crossfade_ms: 20        # crossfade at splice points (reserved; not yet used by pipeline)
+  min_gap_sec: 2.0        # merge adjacent speech segments if gap is shorter than this
+  padding_sec: 0.5        # breathing room added before/after every cut point
+
+restarts:
+  enabled: true
+  trigger_phrases:
+    - "cut cut"
+    - "кат кат"
+  detect_repeated_starts: true   # auto-detect sentence restarts
+
+fillers:
+  enabled: true
+  min_filler_duration_sec: 0.0   # skip filler words shorter than this (0.0 = remove all detected fillers)
+  words:
+    en: ["um", "uh", "like", "you know", "basically", "literally"]
+    ru: ["ну", "типа", "вот", "короче", "как бы", "в общем", "эээ", "ээ"]
+
+audio:
+  enabled: false          # disabled by default; enable via --config override
+  denoise: true
+  denoise_level: -25      # afftdn noise floor (dB)
+  highpass_freq: 80       # Hz
+  deess_freq: 6000        # Hz
+  deess_gain: -4          # dB reduction
+  compressor_threshold: -18   # dB
+  compressor_ratio: 3
+  limiter_limit: -1       # dB
+  loudness_target: -14    # LUFS (YouTube standard)
+
+video:
+  lut_path: null          # path to .cube LUT file, null = skip
+  zoom_punch:
+    enabled: false
+    zoom_factor: 1.05     # 5% zoom on alternating segments
+  position_smoothing:
+    enabled: true         # face-centered crop via MediaPipe
+
+hook:
+  enabled: true
+  duration_sec: 8         # target hook duration
+  crossfade_sec: 0.5      # transition between hook and main content
+  model: "anthropic/claude-sonnet-4"   # OpenRouter model
+
+chapters:
+  enabled: true
+  model: "anthropic/claude-sonnet-4"   # OpenRouter model
+
+encoding:
+  codec: h264_videotoolbox    # macOS hardware encoder
+  quality: 65                 # VideoToolbox quality (0-100, higher = better)
+  audio_codec: aac
+  audio_bitrate: "192k"

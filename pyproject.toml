@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-video-editor"
+version = "1.0.0"
+description = "AI-powered CLI tool for automatic talking-head video editing"
+requires-python = ">=3.11"
+dependencies = [
+    # CLI + config
+    "typer[all]>=0.9.0",
+    "pyyaml>=6.0",
+    "rich>=13.0",
+    # HTTP client for OpenRouter
+    "httpx>=0.27.0",
+    # ML / analysis
+    "torch>=2.1.0",
+    "faster-whisper>=1.0.0",
+    "mediapipe>=0.10.0",
+    # MCP server
+    "mcp>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+ai-video-editor = "src.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

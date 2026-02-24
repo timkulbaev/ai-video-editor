@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ai-video-editor": {
+      "command": "/path/to/ai-video-editor/.venv/bin/python",
+      "args": ["-m", "src.mcp_server"],
+      "cwd": "/path/to/ai-video-editor"
+    }
+  }
+}

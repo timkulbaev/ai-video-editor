@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Pipeline working directories (temp segments, concat lists)
+work_*/
+/tmp/
+
+# Test artifacts
+tests/fixtures/*.mp4
+tests/fixtures/*.wav
+tests/debug/
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
