@@ -114,9 +114,6 @@ def run_pipeline(
         from .steps.assemble import run as assemble
         context.update(assemble(context, config))
 
-        from .steps.jump_cuts import run as jump_cuts
-        context.update(jump_cuts(context, config))
-
         from .steps.enhance_audio import run as enhance_audio
         context.update(enhance_audio(context, config))
 

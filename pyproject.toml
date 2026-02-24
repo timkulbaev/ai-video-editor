@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ai-video-editor"
-version = "0.1.1"
+version = "0.1.2"
 description = "AI-powered CLI tool for automatic talking-head video editing"
 requires-python = ">=3.11"
 dependencies = [
@@ -17,7 +17,6 @@ dependencies = [
     # ML / analysis
     "torch>=2.1.0",
     "faster-whisper>=1.0.0",
-    "mediapipe>=0.10.0",
     # MCP server
     "mcp>=1.0.0",
 ]

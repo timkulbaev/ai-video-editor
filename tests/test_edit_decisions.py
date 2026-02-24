@@ -8,6 +8,7 @@ from src.steps.edit_decisions import (
     run,
     _remove_restart_phrases,
     _remove_fillers,
+    _remove_short_bursts,
     _ranges_overlap,
 )
 
@@ -23,8 +24,8 @@ def _make_segment(text: str, start: float, end: float, words: list[dict] | None 
     return {"text": text, "start": start, "end": end, "words": words or []}
 
 
-def _make_keep_seg(start: float, end: float, zoom: bool = False, zoom_factor: float = 1.05) -> dict:
-    return {"start": start, "end": end, "zoom": zoom, "zoom_factor": zoom_factor}
+def _make_keep_seg(start: float, end: float) -> dict:
+    return {"start": start, "end": end}
 
 
 DEFAULT_CONFIG = {
@@ -38,12 +39,6 @@ DEFAULT_CONFIG = {
         "words": {
             "en": ["um", "uh", "like", "you know"],
             "ru": ["ну", "типа", "вот"],
-        },
-    },
-    "video": {
-        "zoom_punch": {
-            "enabled": True,
-            "zoom_factor": 1.05,
         },
     },
 }
@@ -72,6 +67,24 @@ class TestRangesOverlap:
 
     def test_reversed_ranges(self):
         assert _ranges_overlap(5.0, 10.0, 0.0, 3.0) is False
+
+
+# ---------------------------------------------------------------------------
+# _remove_short_bursts
+# ---------------------------------------------------------------------------
+
+class TestRemoveShortBursts:
+    def test_remove_short_bursts_filters_short_segments(self):
+        segments = [
+            {"start": 0.0, "end": 0.5},   # short burst (0.5s < 2.0s threshold)
+            {"start": 2.0, "end": 7.0},   # long segment (5.0s) — should survive
+            {"start": 8.0, "end": 9.5},   # short burst (1.5s < 2.0s threshold)
+        ]
+        kept, burst_count = _remove_short_bursts(segments, max_duration_sec=2.0)
+        assert len(kept) == 1
+        assert kept[0]["start"] == 2.0
+        assert kept[0]["end"] == 7.0
+        assert burst_count == 2
 
 
 # ---------------------------------------------------------------------------
@@ -144,8 +157,8 @@ class TestRemoveFillers:
     def test_russian_filler_removed(self):
         segments = [_make_keep_seg(0.0, 3.0)]
         transcript = [_make_segment("ну хорошо", 0.0, 3.0, [
-            _make_word("ну", 0.0, 0.2),
-            _make_word("хорошо", 0.2, 1.0),
+            _make_word("ну", 0.0, 0.35),  # 0.35s duration — above 0.3s min_filler_duration_sec default
+            _make_word("хорошо", 0.35, 1.0),
         ])]
         result, count = _remove_fillers(
             segments, transcript, {"words": {"en": [], "ru": ["ну"]}}
@@ -204,7 +217,7 @@ class TestRemoveRestartPhrases:
             "detect_repeated_starts": False,
         }
         result = _remove_restart_phrases(segments, transcript, config)
-        # The first segment (0-5) overlaps the removal range [0, 5.7] → removed
+        # The first segment (0-5) overlaps the removal range [0, 5.7] -> removed
         # The second segment (6-12) should survive
         removed_starts = {s["start"] for s in result}
         assert 0.0 not in removed_starts
@@ -223,9 +236,9 @@ class TestRemoveRestartPhrases:
         assert len(result) == 2
 
     def test_repeated_sentence_start_removed(self):
-        # Two segments starting with the same 3 words → first is a restart
+        # Two segments starting with the same 3 words -> first is a restart
         segments = [
-            _make_keep_seg(0.0, 3.0),  # first attempt
+            _make_keep_seg(0.0, 3.0),   # first attempt
             _make_keep_seg(4.0, 10.0),  # clean take
         ]
         transcript = [
@@ -244,7 +257,7 @@ class TestRemoveRestartPhrases:
         ]
         config = {"trigger_phrases": [], "detect_repeated_starts": True}
         result = _remove_restart_phrases(segments, transcript, config)
-        # First segment (0-3) is a restart → should be removed
+        # First segment (0-3) is a restart -> should be removed
         starts = {s["start"] for s in result}
         assert 0.0 not in starts
         assert 4.0 in starts
@@ -260,7 +273,7 @@ class TestRemoveRestartPhrases:
         config = {"trigger_phrases": ["кат кат"], "detect_repeated_starts": False}
         result = _remove_restart_phrases(segments, transcript, config)
         starts = {s["start"] for s in result}
-        # Removal range is [max(0, 4.5-5), 5.0] = [0, 5.0] → overlaps first segment
+        # Removal range is [max(0, 4.5-5), 5.0] = [0, 5.0] -> overlaps first segment
         assert 0.0 not in starts
         assert 6.0 in starts
 
@@ -292,37 +305,6 @@ class TestRunStep:
         seg = result["keep_segments"][0]
         assert "start" in seg
         assert "end" in seg
-        assert "zoom" in seg
-        assert "zoom_factor" in seg
-
-    def test_run_alternating_zoom_applied(self):
-        context = {
-            "speech_segments": [
-                {"start": 0.0, "end": 3.0},
-                {"start": 4.0, "end": 7.0},
-                {"start": 8.0, "end": 11.0},
-            ],
-            "transcript": [],
-        }
-        result = run(context, DEFAULT_CONFIG)
-        segs = result["keep_segments"]
-        assert segs[0]["zoom"] is False  # even index
-        assert segs[1]["zoom"] is True   # odd index
-        assert segs[2]["zoom"] is False  # even index
-
-    def test_run_zoom_disabled_no_zoom(self):
-        config = dict(DEFAULT_CONFIG)
-        config["video"] = {"zoom_punch": {"enabled": False, "zoom_factor": 1.05}}
-        context = {
-            "speech_segments": [
-                {"start": 0.0, "end": 3.0},
-                {"start": 4.0, "end": 7.0},
-            ],
-            "transcript": [],
-        }
-        result = run(context, config)
-        for seg in result["keep_segments"]:
-            assert seg["zoom"] is False
 
     def test_run_fillers_and_restarts_disabled(self):
         config = dict(DEFAULT_CONFIG)

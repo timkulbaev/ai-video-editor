@@ -16,6 +16,7 @@ restarts:
     - "cut cut"
     - "кат кат"
   detect_repeated_starts: true   # auto-detect sentence restarts
+  max_burst_duration_sec: 2.0   # remove short isolated speech segments (restarts, coughs)
 
 fillers:
   enabled: true
@@ -38,11 +39,8 @@ audio:
 
 video:
   lut_path: null          # path to .cube LUT file, null = skip
-  zoom_punch:
-    enabled: false
-    zoom_factor: 1.05     # 5% zoom on alternating segments
   position_smoothing:
-    enabled: true         # face-centered crop via MediaPipe
+    enabled: true
 
 hook:
   enabled: true

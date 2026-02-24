@@ -24,7 +24,6 @@ src/
     transcribe.py      # faster-whisper — produces transcript with word timestamps
     edit_decisions.py  # Merge, filter, pad segments — produces keep_segments
     assemble.py        # FFmpeg extract + concat — produces assembled_video
-    jump_cuts.py       # Alternating zoom punch-in with face-centered crop
     enhance_audio.py   # Optional audio polish chain
     color_grade.py     # Optional .cube LUT color grading
     smart_hook.py      # Optional AI hook via OpenRouter
@@ -33,7 +32,6 @@ src/
   utils/
     ffmpeg.py          # FFmpeg wrappers (run, probe, bin detection)
     openrouter.py      # OpenRouter API client (chat completion)
-    face_detect.py     # MediaPipe face detection for position smoothing
     json_output.py     # emit_progress / emit_error helpers
 config.default.yml     # Baseline config (all features documented)
 ```

@@ -2,6 +2,7 @@
 
 Combines:
   - Speech segments from Silero VAD (silence removal)
+  - Short burst removal (restart markers like "cut cut", coughs, false starts)
   - Restart phrase detection ("cut cut", "кат кат", repeated sentence starts)
   - Filler word removal (configurable word lists)
 """
@@ -22,11 +23,11 @@ def run(context: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
             - "transcript": [{text, start, end, words: [{word, start, end, probability}]}, ...]
             - "total_duration": float — video duration in seconds (for padding clamp)
         config: Full pipeline config. Reads config["silence"], config["restarts"],
-                config["fillers"], config["video"]["zoom_punch"].
+                config["fillers"].
 
     Returns:
         {
-            "keep_segments": [{"start": float, "end": float, "zoom": bool, "zoom_factor": float}],
+            "keep_segments": [{"start": float, "end": float}],
             "edit_stats": {"silence_removed_sec": float, "segments_removed": int,
                            "restarts_removed": int, "fillers_removed": int}
         }
@@ -36,19 +37,6 @@ def run(context: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     speech_segments: list[dict] = context.get("speech_segments", [])
     transcript: list[dict] = context.get("transcript", [])
 
-    # Merge adjacent VAD segments separated by a short gap.
-    # Natural pauses shorter than min_gap_sec are preserved rather than cut.
-    # This runs first, before restart/filler removal, so those steps see
-    # already-merged segments.
-    silence_cfg = config.get("silence", {})
-    min_gap_sec: float = silence_cfg.get("min_gap_sec", 2.0)
-    speech_segments = _merge_close_segments(speech_segments, min_gap_sec)
-
-    keep_segments = [
-        {"start": s["start"], "end": s["end"], "zoom": False, "zoom_factor": 1.05}
-        for s in speech_segments
-    ]
-
     edit_stats = {
         "silence_removed_sec": 0.0,
         "segments_removed": 0,
@@ -56,13 +44,33 @@ def run(context: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
         "fillers_removed": 0,
     }
 
-    # Remove restart phrases
+    # Remove short isolated bursts BEFORE merging — restart markers like "cut cut",
+    # coughs, and false starts appear as short standalone VAD segments. Once merged
+    # into longer segments these are indistinguishable from real content.
     restarts_cfg = config.get("restarts", {})
+    max_burst_sec: float = restarts_cfg.get("max_burst_duration_sec", 2.0)
+    if restarts_cfg.get("enabled", True) and max_burst_sec > 0:
+        speech_segments, burst_count = _remove_short_bursts(speech_segments, max_burst_sec)
+        edit_stats["restarts_removed"] += burst_count
+
+    # Merge adjacent VAD segments separated by a short gap.
+    # Natural pauses shorter than min_gap_sec are preserved rather than cut.
+    # This runs after burst removal so merged segments don't hide short bursts.
+    silence_cfg = config.get("silence", {})
+    min_gap_sec: float = silence_cfg.get("min_gap_sec", 2.0)
+    speech_segments = _merge_close_segments(speech_segments, min_gap_sec)
+
+    keep_segments = [
+        {"start": s["start"], "end": s["end"]}
+        for s in speech_segments
+    ]
+
+    # Remove restart phrases (word-matching, secondary check after burst removal)
     if restarts_cfg.get("enabled", True):
         before = len(keep_segments)
         keep_segments = _remove_restart_phrases(keep_segments, transcript, restarts_cfg)
         removed = before - len(keep_segments)
-        edit_stats["restarts_removed"] = removed
+        edit_stats["restarts_removed"] += removed
 
     # Remove filler words
     fillers_cfg = config.get("fillers", {})
@@ -87,15 +95,6 @@ def run(context: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     # causes negative values when fillers split more segments than restarts removed.
     edit_stats["segments_removed"] = edit_stats["restarts_removed"]
 
-    # Apply alternating zoom punch-in on consecutive cut points
-    zoom_cfg = config.get("video", {}).get("zoom_punch", {})
-    if zoom_cfg.get("enabled", True):
-        zoom_factor = zoom_cfg.get("zoom_factor", 1.05)
-        for i, seg in enumerate(keep_segments):
-            if i % 2 == 1:  # odd-indexed segments get zoom to mask jump cut
-                seg["zoom"] = True
-                seg["zoom_factor"] = zoom_factor
-
     emit_progress(
         "analysis",
         "edit_decisions",
@@ -106,6 +105,34 @@ def run(context: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     )
 
     return {"keep_segments": keep_segments, "edit_stats": edit_stats}
+
+
+def _remove_short_bursts(
+    segments: list[dict],
+    max_duration_sec: float,
+) -> tuple[list[dict], int]:
+    """Remove short isolated speech segments that are likely restart markers.
+
+    Short bursts (< max_duration_sec) like "cut cut", coughs, or false starts
+    are removed. This runs BEFORE segment merging so the bursts are still
+    individually identifiable.
+
+    Args:
+        segments: Original VAD speech segments (unmerged).
+        max_duration_sec: Maximum duration to consider a segment a "burst".
+
+    Returns:
+        (filtered_segments, burst_count_removed)
+    """
+    kept = []
+    removed = 0
+    for seg in segments:
+        duration = seg["end"] - seg["start"]
+        if duration < max_duration_sec:
+            removed += 1
+        else:
+            kept.append(seg)
+    return kept, removed
 
 
 def _merge_close_segments(segments: list[dict], min_gap_sec: float) -> list[dict]:
@@ -301,8 +328,6 @@ def _remove_fillers(
                 result.append({
                     "start": current_start,
                     "end": fs,
-                    "zoom": seg["zoom"],
-                    "zoom_factor": seg["zoom_factor"],
                 })
             current_start = fe
 
@@ -311,8 +336,6 @@ def _remove_fillers(
             result.append({
                 "start": current_start,
                 "end": seg["end"],
-                "zoom": seg["zoom"],
-                "zoom_factor": seg["zoom_factor"],
             })
 
     return result, filler_count

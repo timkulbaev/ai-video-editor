@@ -2,6 +2,18 @@
 
 All notable changes to ai-video-editor are documented here.
 
+## v0.1.2 — 2026-02-25
+
+### Fixed
+- "Cut cut" restart phrases and other short isolated speech bursts are now reliably removed — new VAD-based short burst detection runs before segment merging, catching restart markers that Whisper skips.
+
+### Removed
+- Zoom punch-in feature (jump_cuts.py, face_detect.py, MediaPipe dependency) — disabled code removed entirely.
+
+### Changed
+- New config key `restarts.max_burst_duration_sec` (default 2.0) controls the short burst threshold.
+- Pre-existing Russian filler word test fixture corrected (word duration was below min_filler_duration_sec threshold).
+
 ## v0.1.1 — 2026-02-24
 
 ### Fixed

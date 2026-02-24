@@ -83,10 +83,6 @@ class TestLoadConfigDefaults:
         config = load_config()
         assert config["encoding"]["codec"] == "h264_videotoolbox"
 
-    def test_default_zoom_factor(self):
-        config = load_config()
-        assert config["video"]["zoom_punch"]["zoom_factor"] == 1.05
-
     def test_default_filler_words_en(self):
         config = load_config()
         assert "um" in config["fillers"]["words"]["en"]
@@ -176,24 +172,6 @@ class TestConfigValidation:
               loudness_target: 5
         """)
         with pytest.raises(ValueError, match="loudness_target"):
-            load_config(user_config)
-
-    def test_zoom_factor_below_1_raises(self, tmp_path):
-        user_config = _write_yaml(tmp_path, """
-            video:
-              zoom_punch:
-                zoom_factor: 0.9
-        """)
-        with pytest.raises(ValueError, match="zoom_factor"):
-            load_config(user_config)
-
-    def test_zoom_factor_above_2_raises(self, tmp_path):
-        user_config = _write_yaml(tmp_path, """
-            video:
-              zoom_punch:
-                zoom_factor: 2.5
-        """)
-        with pytest.raises(ValueError, match="zoom_factor"):
             load_config(user_config)
 
     def test_encoding_quality_out_of_range_raises(self, tmp_path):

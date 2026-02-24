@@ -60,10 +60,6 @@ def _validate(config: dict[str, Any]) -> None:
     if not (-70 <= loudness_target <= 0):
         raise ValueError(f"audio.loudness_target must be between -70 and 0 dB, got {loudness_target}")
 
-    zoom_factor = config.get("video", {}).get("zoom_punch", {}).get("zoom_factor", 1.05)
-    if not (1.0 <= zoom_factor <= 2.0):
-        raise ValueError(f"video.zoom_punch.zoom_factor must be between 1.0 and 2.0, got {zoom_factor}")
-
     quality = config.get("encoding", {}).get("quality", 65)
     if not (0 <= quality <= 100):
         raise ValueError(f"encoding.quality must be between 0 and 100, got {quality}")
